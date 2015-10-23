@@ -13,7 +13,7 @@ from beaker.middleware import SessionMiddleware
 mainword = ""
 maintblstr = ""
 maindict = OrderedDict()  # creating ordered dictionary "maindict"
-user_info = {}
+email_of_user_logged_in = ""
 
 # Session information
 session_opts = {
@@ -52,25 +52,29 @@ def redirect_page():  # query entered in SIGN IN MODE
     # At this point we create a session for the signed-in user.
     session = bottle.request.environ.get('beaker.session')
     session[user_email] = token
+    global email_of_user_logged_in
+    email_of_user_logged_in = user_email
     session.save
-    bottle.redirect("/?session={user_email}".format(user_email=user_email))
+    bottle.redirect('/')
 
 @route('/', method="GET")
 def main():
 
+    global email_of_user_logged_in
+    session = bottle.request.environ.get('beaker.session')
+    print email_of_user_logged_in
+
+    welcome_html = ""
+    if (email_of_user_logged_in in session):
+        welcome_html = '<h3>Hey there, {user_email}</h3>'.format(user_email=email_of_user_logged_in)
+    else:
+        print "WE DO NOT HAVE A SESSION"
+
     try:
         request.query['keywords']
     except KeyError:
-
-        try:
-            request.query['session']
-        except KeyError:
-            return static_file('snake_search.html', root='./')
-
-        user_email = request.query['session']
         page = urllib.urlopen('snake_search.html').read()
-        welcome = '<h3>Hey there, {user_email}</h3>'.format(user_email=user_email)
-        return welcome + page
+        return welcome_html + page
 
     global mainword  # declaring global word string
     global maintblstr
