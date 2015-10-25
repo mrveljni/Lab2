@@ -10,9 +10,11 @@ from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from beaker.middleware import SessionMiddleware
 
+querylist=[]
 mainword = ""
 maintblstr = ""
 emaildict = OrderedDict()
+emaildict2 = OrderedDict()
 email_of_user_logged_in = ""
 
 # Session information
@@ -134,7 +136,8 @@ def main():
     resultstringreturn = results()
     if email_of_user_logged_in:
         historystringreturn = history()
-        return welcome_html, resultstringreturn, "<br><br><br>", historystringreturn
+        recentlystringreturn = recentlysearched()
+        return welcome_html, resultstringreturn, "<br><br><br>", historystringreturn, "<br><br><br>", recentlystringreturn
     else:
         return not_logged_in, resultstringreturn, "<br><br><br>"
 
@@ -167,6 +170,7 @@ def history():  # returns top 20 queried words
 def results():  # returns the count of words that user has queried (cumulating word count but only to show words of
                 # those which user has last queried)
     word = ""  # declaring word string
+    global querylist
     tblstr = ""
     dict = OrderedDict()  # declaring ordered dictionary datastructure
     queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
@@ -186,6 +190,32 @@ def results():  # returns the count of words that user has queried (cumulating w
 
     resultstring = searchstring + tablebeginning + tableheader + tblstr + tableend
     return resultstring;
+
+def recentlysearched():
+    tblstr=""
+    print 'You are in recently searched'
+    if email_of_user_logged_in:
+        recentsearchstring = []
+        if email_of_user_logged_in not in emaildict2:
+            emaildict2[email_of_user_logged_in]= recentsearchstring
+    emaildict2[email_of_user_logged_in] = emaildict2[email_of_user_logged_in] + querylist
+    len_of_rss_array = len(emaildict2[email_of_user_logged_in])
+    print 'This is length of rss array: ', len_of_rss_array
+    a = len_of_rss_array - 10
+    a = a-1
+    emaildict2[email_of_user_logged_in] = emaildict2[email_of_user_logged_in][a:]
+    mainsearchstring = "10 most recently searched:"  # SHOWS ON RESULT PAGE: history table header
+    maintablebeginning = "<table id = \"recently_searched\">"  # SHOWS ON RESULT PAGE: table id beginning
+    for i in range(len_of_rss_array):
+        tblstr = tblstr + "<tr> <td> {recentword}</td>".format(recentword=emaildict2[email_of_user_logged_in][i])
+    maintableend = "</table>"  # SHOWS ON RESULT PAGE: table id ender
+    recentsearchstring = mainsearchstring + maintablebeginning + tblstr + maintableend
+
+    return recentsearchstring
+
+
+
+
 
 
 run(app=app, hosts='localhost', port=8080, debug=True)
