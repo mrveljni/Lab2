@@ -12,7 +12,7 @@ from beaker.middleware import SessionMiddleware
 
 mainword = ""
 maintblstr = ""
-maindict = OrderedDict()  # creating ordered dictionary "maindict"
+maindict = OrderedDict()
 email_of_user_logged_in = ""
 
 # Session information
@@ -23,22 +23,47 @@ session_opts = {
 }
 app = SessionMiddleware(bottle.app(), session_opts)
 
+# Establishing home page and static assets
 @route('<filename:path>')
 def static(filename):
     return static_file(filename, root='./')
 
-@route('/signin')
-def signin():
-     # Step2: App server generates auth URL base on client ID
-    flow = flow_from_clientsecrets("client_secrets.json", scope='https://www.googleapis.com/auth/plus.me ' 'https://www.googleapis.com/auth/userinfo.email', redirect_uri="http://localhost:8080/redirect")
+# Sign Out
+@route('/signout')
+def signout():
+    session = bottle.request.environ.get('beaker.session')
+    print "You are in sign out"
+    global email_of_user_logged_in
+    email_of_user_logged_in=""
+    flow = flow_from_clientsecrets("client_secrets.json",
+                                   scope='https://www.googleapis.com/auth/plus.me '
+                                         'https://www.googleapis.com/auth/userinfo.email',
+                                   redirect_uri="https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=http://localhost:8080")
     uri = flow.step1_get_authorize_url()
     bottle.redirect(str(uri))
 
+# Sign In
+@route('/signin')
+def signin():
+    print "You are in sign in"
+     # Step2: App server generates auth URL base on client ID
+    flow = flow_from_clientsecrets("client_secrets.json",
+                                   scope='https://www.googleapis.com/auth/plus.me '
+                                         'https://www.googleapis.com/auth/userinfo.email',
+                                   redirect_uri="http://localhost:8080/redirect")
+    uri = flow.step1_get_authorize_url()
+    print"You are being redirected to /redirect"
+    bottle.redirect(str(uri))
+
+# Redirect to authorize user, extract user email and create session
 @route('/redirect')
 def redirect_page():  # query entered in SIGN IN MODE
-
+    print "You are in redirect"
     code = request.query.get('code', '')
-    flow = OAuth2WebServerFlow(client_id='1011735639727-i12ach2k55gogrfl603e9fl1ub2u5rm0.apps.googleusercontent.com',client_secret='GDrQHnGCjVoDLJLgP5p7IyAr', scope="https://www.googleapis.com/auth/calendar", redirect_uri='http://localhost:8080/redirect')
+    flow = OAuth2WebServerFlow(client_id='1011735639727-i12ach2k55gogrfl603e9fl1ub2u5rm0.apps.googleusercontent.com',
+                               client_secret='GDrQHnGCjVoDLJLgP5p7IyAr',
+                               scope="https://www.googleapis.com/auth/calendar",
+                               redirect_uri='http://localhost:8080/redirect')
     credentials = flow.step2_exchange(code)
     token = credentials.id_token['sub']
     http = httplib2.Http()
@@ -50,19 +75,22 @@ def redirect_page():  # query entered in SIGN IN MODE
     user_email = user_document['email']
 
     # At this point we create a session for the signed-in user.
-    session = bottle.request.environ.get('beaker.session')
-    session[user_email] = token
+    session = bottle.request.environ.get('beaker.session') #session is a dictionary
+    session[user_email] = token #saving user_email as key, and value is token
     global email_of_user_logged_in
     email_of_user_logged_in = user_email
+    print "This is email: ", email_of_user_logged_in
     session.save
     bottle.redirect('/')
 
+
+# Main search engine method
 @route('/', method="GET")
 def main():
 
     global email_of_user_logged_in
-    session = bottle.request.environ.get('beaker.session')
-    print email_of_user_logged_in
+    session = bottle.request.environ.get('beaker.session') #extracting the global variable dictionary beaker.session
+    print "In Main: ", email_of_user_logged_in
 
     welcome_html = ""
     if (email_of_user_logged_in in session):
@@ -70,32 +98,39 @@ def main():
     else:
         print "WE DO NOT HAVE A SESSION"
 
-    try:
+    try: #check if the user is passing /?keywords in the URL (request)
         request.query['keywords']
     except KeyError:
         page = urllib.urlopen('snake_search.html').read()
         return welcome_html + page
 
-    global mainword  # declaring global word string
-    global maintblstr
-    global maindict  # declaring global ordered dictionary datastructure
-    mainqueryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
-    mainquerylist = mainqueryresult.split(" ")  # splitting queryresult by the spaces and reversing it
-
-    for mainword in mainquerylist:  # for each word in user query
-        if mainword not in maindict:  # check if the word does not exist in the main dictionary
-            maindict[mainword] = 1  # if nonexistent, add it in and count value = 1
-        else:  # else word does exist in main dictionary
-            maindict[mainword] += 1  # increase count value by 1
-
-    for k, v in maindict.iteritems():  # for each key and value in maindictionary, go through each item
-        maintblstr = maintblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k, querycount=v)  # add each item as a row in the table HTML format
+    if email_of_user_logged_in:
+        global mainword  # declaring global word string
+        global maintblstr
+        global maindict  # declaring global ordered dictionary datastructure
+        mainqueryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
+        mainquerylist = mainqueryresult.split(" ")  # splitting queryresult by the spaces and reversing it
+        for mainword in mainquerylist:  # for each word in user query
+            if mainword not in maindict:  # check if the word does not exist in the main dictionary
+                maindict[mainword] = 1  # if nonexistent, add it in and count value = 1
+            else:  # else word does exist in main dictionary
+                maindict[mainword] += 1  # increase count value by 1
+        for k, v in maindict.iteritems():  # for each key and value in maindictionary, go through each item
+            maintblstr = maintblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,
+                                                                                                   querycount=v)
+                                                                                               # add each item as a row
+                                                                                               # in the table HTML
+                                                                                               # format
+    not_logged_in=""
+    not_logged_in = '<h3>You are not logged in a session!</h3>'
     resultstringreturn = results()
-    # historystringreturn = history() ####you do not return history in anonymous mode
+    historystringreturn = history()
+    if email_of_user_logged_in:
+        return welcome_html, resultstringreturn, "<br><br><br>", historystringreturn
+    else:
+        return not_logged_in, resultstringreturn, "<br><br><br>"
 
-    return resultstringreturn, "<br><br><br>"  # , historystringreturn
-
-
+# History Table
 def history():  # returns top 20 queried words
     global maindict
     word = ""
@@ -105,19 +140,23 @@ def history():  # returns top 20 queried words
     queryresult = request.query['keywords'].lower()
     querylist = queryresult.split(" ")
     newdict = sorted(maindict, key=maindict.get,
-                     reverse=True)  # returns new dict list of values sorted by decreasing # of counts...not a dictionary
+                     reverse=True)  # returns new dict list of values sorted by decreasing # of counts
     newdict = newdict[:20]  # cut the sorted new dict list to only 20 elements (highest count decreasing)
     for newdictword in newdict:  # for each word in the 20 element list
-        tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=newdictword, querycount=maindict[newdictword])  # add the word in 20 element list and it's value in tblstr
+        # add the word in 20 element list and it's value in tblstr
+        tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=newdictword,
+                                                                                       querycount=maindict[newdictword])
+
     mainsearchstring = "Top 20 queried words:"  # SHOWS ON RESULT PAGE: history table header
-    maintableheader = "<tr> <td> <b> Word </b> </td> <td> <b> Count </b> </td></tr>"  # SHOWS ON RESULT PAGE: header of table
+    maintableheader = "<tr> <td> <b> Word </b> </td> <td> <b> Count </b> </td></tr>"
     maintablebeginning = "<table id = \"history\">"  # SHOWS ON RESULT PAGE: table id beginning
     maintableend = "</table>"  # SHOWS ON RESULT PAGE: table id ender
     historystring = mainsearchstring + maintablebeginning + maintableheader + tblstr + maintableend
     return historystring;
 
-
-def results():  # returns the count of words that user has queried (cumulating word count but only to show words of those which user has last queried)
+# Return Table
+def results():  # returns the count of words that user has queried (cumulating word count but only to show words of
+                # those which user has last queried)
     i = 0
     global maindict  # declaring global main dictionary used in main()
     word = ""  # declaring word string
@@ -127,8 +166,6 @@ def results():  # returns the count of words that user has queried (cumulating w
     queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
     querylist = queryresult.split(" ")  # splitting queryresult by the spaces and reversing it
     for word in querylist:  # for each word in user query
-        # if word in maindict: #if the word exists in main dictionary (saved as server runs)
-        # dict[word]=maindict[word] #make the count of current results dictionary = count of main dictionary
         if word not in dict:  # if word is not in the results dictionary, add it and assign it a count of 1
             dict[word] = 1
         else:  # if word is in results dictionary, increase the count by 1
@@ -136,14 +173,12 @@ def results():  # returns the count of words that user has queried (cumulating w
     searchstring = "Search for <i>\"{querystring}\" </i> ".format(querystring=request.query['keywords'])
     tableheader = "<tr> <td> <b> Word </b> </td> <td> <b> Count </b> </td></tr>"
     for k, v in dict.iteritems():  # for each key and value in maindictionary, go through each item
-        tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,querycount=v)  # add each item as a row in the table HTML format
+        # add each item as a row in the table HTML format
+        tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,querycount=v)
     tablebeginning = "<table id = \"results\">"
     tableend = "</table>"
 
     resultstring = searchstring + tablebeginning + tableheader + tblstr + tableend
-    # for k, v in dict.iteritems():
-    # tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k, querycount=v)
-    # resultstring = searchstring + tablebeginning + tableheader + tblstr + tableend
     return resultstring;
 
 
