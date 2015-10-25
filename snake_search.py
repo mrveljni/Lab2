@@ -193,6 +193,7 @@ def results():  # returns the count of words that user has queried (cumulating w
 
 def recentlysearched():
     tblstr=""
+    templst=[]
     print 'You are in recently searched'
     if email_of_user_logged_in:
         recentsearchstring = []
@@ -203,11 +204,18 @@ def recentlysearched():
     print 'This is length of rss array: ', len_of_rss_array
     a = len_of_rss_array - 10
     a = a-1
-    emaildict2[email_of_user_logged_in] = emaildict2[email_of_user_logged_in][a:]
+    print 'This is array: ', emaildict2[email_of_user_logged_in]
+    templst = emaildict2[email_of_user_logged_in][a:]
+    templst = templst[::-1]
+    print 'This is array2: ', templst
     mainsearchstring = "10 most recently searched:"  # SHOWS ON RESULT PAGE: history table header
     maintablebeginning = "<table id = \"recently_searched\">"  # SHOWS ON RESULT PAGE: table id beginning
-    for i in range(len_of_rss_array):
-        tblstr = tblstr + "<tr> <td> {recentword}</td>".format(recentword=emaildict2[email_of_user_logged_in][i])
+    if len(templst) < 10:
+        for i in range(len(templst)):
+            tblstr = tblstr + "<tr> <td> {recentword}</td>".format(recentword=templst[i])
+    else:
+        for i in range(9):
+            tblstr = tblstr + "<tr> <td> {recentword}</td>".format(recentword=templst[i])
     maintableend = "</table>"  # SHOWS ON RESULT PAGE: table id ender
     recentsearchstring = mainsearchstring + maintablebeginning + tblstr + maintableend
 
