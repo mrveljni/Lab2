@@ -94,7 +94,11 @@ def main():
 
     welcome_html = ""
     if (email_of_user_logged_in in session):
-        welcome_html = '<h3>Hey there, {user_email}</h3>'.format(user_email=email_of_user_logged_in)
+        welcome_html = '<html>\
+        <div><h3 align="middle">Hey there, {user_email}</h3>\
+        <form align="middle" name="snake_signout" action="http://localhost:8080/signout" method="GET">\
+        <input style="width:150px; height:100px" type="submit" value="Sign Out!"></input>\
+        </form><div></html>'.format(user_email=email_of_user_logged_in)
     else:
         print "WE DO NOT HAVE A SESSION"
 
@@ -127,6 +131,16 @@ def main():
                                                                                                # format
     not_logged_in=""
     not_logged_in = '<h3>You are not logged in a session!</h3>'
+=======
+                maindict[mainword] += 1  # increase count value by 1
+        for k, v in maindict.iteritems():  # for each key and value in maindictionary, go through each item
+            maintblstr = maintblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,querycount=v)
+
+# add each item as a row
+# in the table HTML
+# format
+    not_logged_in = '<h3>You are not logged in!</h3>'
+>>>>>>> origin/master
     resultstringreturn = results()
     if email_of_user_logged_in:
         historystringreturn = history()
