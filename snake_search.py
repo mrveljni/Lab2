@@ -12,7 +12,7 @@ from beaker.middleware import SessionMiddleware
 
 mainword = ""
 maintblstr = ""
-maindict = OrderedDict()
+emaildict = OrderedDict()
 email_of_user_logged_in = ""
 
 # Session information
@@ -87,7 +87,7 @@ def redirect_page():  # query entered in SIGN IN MODE
 # Main search engine method
 @route('/', method="GET")
 def main():
-
+    global emaildict
     global email_of_user_logged_in
     session = bottle.request.environ.get('beaker.session') #extracting the global variable dictionary beaker.session
     print "In Main: ", email_of_user_logged_in
@@ -107,15 +107,19 @@ def main():
     if email_of_user_logged_in:
         global mainword  # declaring global word string
         global maintblstr
-        global maindict  # declaring global ordered dictionary datastructure
+        maindict = OrderedDict()
+        print 'This is user logged in: ', email_of_user_logged_in
+        print 'This is main dict: ', maindict
+        if email_of_user_logged_in not in emaildict:
+            emaildict[email_of_user_logged_in]= maindict
         mainqueryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
         mainquerylist = mainqueryresult.split(" ")  # splitting queryresult by the spaces and reversing it
         for mainword in mainquerylist:  # for each word in user query
-            if mainword not in maindict:  # check if the word does not exist in the main dictionary
-                maindict[mainword] = 1  # if nonexistent, add it in and count value = 1
+            if mainword not in emaildict[email_of_user_logged_in]:  # check if the word does not exist in the main dictionary
+                emaildict[email_of_user_logged_in][mainword] = 1  # if nonexistent, add it in and count value = 1
             else:  # else word does exist in main dictionary
-                maindict[mainword] += 1  # increase count value by 1
-        for k, v in maindict.iteritems():  # for each key and value in maindictionary, go through each item
+                emaildict[email_of_user_logged_in][mainword] += 1  # increase count value by 1
+        for k, v in emaildict[email_of_user_logged_in].iteritems():  # for each key and value in maindictionary, go through each item
             maintblstr = maintblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,
                                                                                                    querycount=v)
                                                                                                # add each item as a row
@@ -124,28 +128,29 @@ def main():
     not_logged_in=""
     not_logged_in = '<h3>You are not logged in a session!</h3>'
     resultstringreturn = results()
-    historystringreturn = history()
     if email_of_user_logged_in:
+        historystringreturn = history()
         return welcome_html, resultstringreturn, "<br><br><br>", historystringreturn
     else:
         return not_logged_in, resultstringreturn, "<br><br><br>"
 
 # History Table
 def history():  # returns top 20 queried words
-    global maindict
     word = ""
     tblstr = ""
     dict = OrderedDict()
     newdict = OrderedDict()
     queryresult = request.query['keywords'].lower()
     querylist = queryresult.split(" ")
-    newdict = sorted(maindict, key=maindict.get,
+    newdict = sorted(emaildict[email_of_user_logged_in], key=emaildict[email_of_user_logged_in].get,
                      reverse=True)  # returns new dict list of values sorted by decreasing # of counts
     newdict = newdict[:20]  # cut the sorted new dict list to only 20 elements (highest count decreasing)
     for newdictword in newdict:  # for each word in the 20 element list
         # add the word in 20 element list and it's value in tblstr
         tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=newdictword,
-                                                                                       querycount=maindict[newdictword])
+                                                                                       querycount=emaildict
+                                                                                       [email_of_user_logged_in]
+                                                                                       [newdictword])
 
     mainsearchstring = "Top 20 queried words:"  # SHOWS ON RESULT PAGE: history table header
     maintableheader = "<tr> <td> <b> Word </b> </td> <td> <b> Count </b> </td></tr>"
@@ -157,12 +162,9 @@ def history():  # returns top 20 queried words
 # Return Table
 def results():  # returns the count of words that user has queried (cumulating word count but only to show words of
                 # those which user has last queried)
-    i = 0
-    global maindict  # declaring global main dictionary used in main()
     word = ""  # declaring word string
     tblstr = ""
     dict = OrderedDict()  # declaring ordered dictionary datastructure
-    newdict = OrderedDict()
     queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
     querylist = queryresult.split(" ")  # splitting queryresult by the spaces and reversing it
     for word in querylist:  # for each word in user query
@@ -172,7 +174,7 @@ def results():  # returns the count of words that user has queried (cumulating w
             dict[word] += 1
     searchstring = "Search for <i>\"{querystring}\" </i> ".format(querystring=request.query['keywords'])
     tableheader = "<tr> <td> <b> Word </b> </td> <td> <b> Count </b> </td></tr>"
-    for k, v in dict.iteritems():  # for each key and value in maindictionary, go through each item
+    for k, v in dict.iteritems():  # for each key and value in dict, go through each item
         # add each item as a row in the table HTML format
         tblstr = tblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,querycount=v)
     tablebeginning = "<table id = \"results\">"
