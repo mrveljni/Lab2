@@ -131,16 +131,6 @@ def main():
                                                                                                # format
     not_logged_in=""
     not_logged_in = '<h3>You are not logged in a session!</h3>'
-=======
-                maindict[mainword] += 1  # increase count value by 1
-        for k, v in maindict.iteritems():  # for each key and value in maindictionary, go through each item
-            maintblstr = maintblstr + "<tr> <td> {queryword} </td> <td> {querycount} </td>".format(queryword=k,querycount=v)
-
-# add each item as a row
-# in the table HTML
-# format
-    not_logged_in = '<h3>You are not logged in!</h3>'
->>>>>>> origin/master
     resultstringreturn = results()
     if email_of_user_logged_in:
         historystringreturn = history()
