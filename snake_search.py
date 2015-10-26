@@ -201,13 +201,8 @@ def recentlysearched():
             emaildict2[email_of_user_logged_in]= recentsearchstring
     emaildict2[email_of_user_logged_in] = emaildict2[email_of_user_logged_in] + querylist
     len_of_rss_array = len(emaildict2[email_of_user_logged_in])
-    print 'This is length of rss array: ', len_of_rss_array
-    a = len_of_rss_array - 10
-    print 'This is array: ', emaildict2[email_of_user_logged_in]
-    templst = emaildict2[email_of_user_logged_in][a:]
-    print 'This is a: ', a
-    print 'This is array2: ', templst
-    templst = templst[::-1]
+    templst = emaildict2[email_of_user_logged_in][::-1]
+    templst = templst[:10]
     print 'This is array3: ', templst
     mainsearchstring = "10 most recently searched:"  # SHOWS ON RESULT PAGE: history table header
     maintablebeginning = "<table id = \"recently_searched\">"  # SHOWS ON RESULT PAGE: table id beginning
