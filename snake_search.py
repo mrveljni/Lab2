@@ -218,7 +218,6 @@ def recentlysearched():
             tblstr = tblstr + "<tr> <td> {recentword}</td>".format(recentword=templst[i])
     maintableend = "</table>"  # SHOWS ON RESULT PAGE: table id ender
     recentsearchstring = mainsearchstring + maintablebeginning + tblstr + maintableend
-
     return recentsearchstring
 
 
