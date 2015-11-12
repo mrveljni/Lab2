@@ -1,8 +1,9 @@
 import re
-import bottle
 import httplib2
 import urllib
 from bottle import *
+# easy-install bottle_sqlite/bottle-sqlite
+import bottle.ext.sqlite as sqlite
 from collections import OrderedDict
 from collections import Counter
 from operator import itemgetter
@@ -23,7 +24,12 @@ session_opts = {
     'session.data_dir': './data',
     'session.auto': True
 }
-app = SessionMiddleware(bottle.app(), session_opts)
+
+plugin = sqlite.Plugin(dbfile='./snake_search.db')
+_bottleApp = app()
+_bottleApp.install(plugin)
+app = SessionMiddleware(_bottleApp, session_opts)
+
 
 # hook before a request is processed
 @hook('before_request')
@@ -52,9 +58,9 @@ def static(filename):
 # Sign Out
 @route('/signout')
 def signout():
-    session = bottle.request.environ.get('beaker.session')
+    session = request.environ.get('beaker.session')
     session['user_email'] = False
-    bottle.redirect('/')
+    redirect('/')
 
 # Sign In
 @route('/signin')
@@ -65,7 +71,7 @@ def signin():
                                          'https://www.googleapis.com/auth/userinfo.email',
                                    redirect_uri="http://localhost:8080/redirect")
     uri = flow.step1_get_authorize_url()
-    bottle.redirect(str(uri))
+    redirect(str(uri))
 
 # Redirect to authorize user, extract user email and create session
 @route('/redirect')
@@ -86,19 +92,19 @@ def redirect_page():  # query entered in SIGN IN MODE
     user_email = user_document['email']
 
     # At this point we create a session for the signed-in user.
-    session = bottle.request.environ.get('beaker.session') #session is a dictionary
+    session = request.environ.get('beaker.session') #session is a dictionary
     #saving user_email as key, and value is token
     session[user_email] = token 
     # saving user_email as a value here, using as an identifier for authenticated state.
     session['user_email'] = user_email
     session.save
-    bottle.redirect('/')
+    redirect('/')
 
 # Main search engine method
 @route('/', method="GET")
-def main():
+def main(db):
     global emaildict
-    session = bottle.request.environ.get('beaker.session') #extracting the global variable dictionary beaker.session
+    session = request.environ.get('beaker.session') #extracting the global variable dictionary beaker.session
     # print "In Main: ", session['user_email']
 
     try: #check if the user is passing /?keywords in the URL (request)
@@ -124,13 +130,13 @@ def main():
 
     # Add the history and recent data structures only if user is logged in
     if ('user_email' in session) and session['user_email']:
-        return template('views/results.tpl', query_str=raw_query_string.lower(), resDict=results(), historyDict = history(), recentList = recentlysearched())
+        return template('views/results.tpl', query_str=raw_query_string.lower(), pagerankedList=pageranked_url_fetcher(db), resDict=results(), historyDict = history(), recentList = recentlysearched())
     else:
-        return template('views/results.tpl', query_str=raw_query_string.lower(), resDict=results(), historyDict = False, recentList = False)
+        return template('views/results.tpl', query_str=raw_query_string.lower(), pagerankedList=pageranked_url_fetcher(db), resDict=results(), historyDict = False, recentList = False)
 
 # Returns user's top 20 queried words as an OrderedDict
 def history():
-    session = bottle.request.environ.get('beaker.session')
+    session = request.environ.get('beaker.session')
     historyDict = emaildict[session['user_email']]
     return OrderedDict(Counter(historyDict).most_common(20));
 
@@ -153,7 +159,7 @@ def recentlysearched():
     tblstr=""
     templst=[]
 
-    s = bottle.request.environ.get('beaker.session')
+    s = request.environ.get('beaker.session')
 
     queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
     querylist = re.findall ('\w+', queryresult)
@@ -169,5 +175,15 @@ def recentlysearched():
     templst = templst[:10]
 
     return templst
+
+def pageranked_url_fetcher(db):
+    firstword = re.findall ('\w+', request.query['keywords'].lower())[0]
+    # Need to pass arguments in as a tuple or an array.
+    args = [ firstword ]
+    cursor = db.execute("select doc_url, doc_url_title, doc_rank from (select doc_index.doc_id, doc_index.doc_url, doc_index.doc_url_title from lexicon,inverted_index,doc_index where lexicon.word_id=inverted_index.word_id and inverted_index.doc_id=doc_index.doc_id  and lexicon.word=?) unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;", args)
+    results = cursor.fetchall();
+    print results
+    print "PAGE RANKED"
+    return results
 
 run(app=app, hosts='localhost', port=8080, debug=True)
