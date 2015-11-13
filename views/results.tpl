@@ -1,5 +1,7 @@
 % rebase('components/base.tpl')
 
+% include('components/search-bar.tpl')
+
 % include('components/table-list-three-cols.tpl', table_id="pageranked_urls", title= "PageRanked URLS for <b>"+ query_str.split(" ")[0] +"</b>", wordList = pagerankedList)
 
 % include('components/table-dict.tpl', table_id="results", title= "Search results for <b>"+ query_str +"</b>", wordDict = resDict)

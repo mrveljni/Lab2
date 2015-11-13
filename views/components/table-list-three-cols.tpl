@@ -35,6 +35,6 @@
         </table>
   </div>
 % else:
-<div class="jumbotron">
-    <h2>No PageRanked URLs</h2>        
-</div>
+  <div class="jumbotron">
+      <h2>No PageRanked URLs</h2>        
+  </div>

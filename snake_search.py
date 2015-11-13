@@ -176,14 +176,15 @@ def recentlysearched():
 
     return templst
 
+# fetches links and their pagerank scores
+# associated with the first word of the user's query
 def pageranked_url_fetcher(db):
     firstword = re.findall ('\w+', request.query['keywords'].lower())[0]
     # Need to pass arguments in as a tuple or an array.
     args = [ firstword ]
     cursor = db.execute("select doc_url, doc_url_title, doc_rank from (select doc_index.doc_id, doc_index.doc_url, doc_index.doc_url_title from lexicon,inverted_index,doc_index where lexicon.word_id=inverted_index.word_id and inverted_index.doc_id=doc_index.doc_id  and lexicon.word=?) unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;", args)
     results = cursor.fetchall();
-    print results
-    print "PAGE RANKED"
+    # print results
     return results
 
 run(app=app, hosts='localhost', port=8080, debug=True)

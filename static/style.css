@@ -20,9 +20,17 @@
   text-align: center;
 }
 
-.query-btn{
+
+#query-container{
+  padding: 5% 0 5% 0;
+}
+
+#query-btn{
   width: 50%;
-  margin-top:35px;
+/*  margin-top:35px;
+*/
+  display: block;
+  margin: 0 auto;
 }
 
 .unclickable:hover{
