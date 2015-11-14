@@ -101,7 +101,7 @@ def redirect_page():  # query entered in SIGN IN MODE
     # At this point we create a session for the signed-in user.
     session = request.environ.get('beaker.session') #session is a dictionary
     #saving user_email as key, and value is token
-    session[user_email] = token 
+    session[user_email] = token
     # saving user_email as a value here, using as an identifier for authenticated state.
     session['user_email'] = user_email
     session.save
@@ -125,10 +125,10 @@ def main(db):
         # print 'This is main dict: ', maindict
         if session['user_email'] not in emaildict:
             emaildict[session['user_email']]= maindict
-        
+
         mainqueryresult = raw_query_string.lower()  # requesting 'keywords' from HTML and making it lowercase
         mainquerylist = re.findall ('\w+', mainqueryresult)
-        
+
         for mainword in mainquerylist:  # for each word in user query
             if mainword not in emaildict[session['user_email']]:  # check if the word does not exist in the main dictionary
                 emaildict[session['user_email']][mainword] = 1  # if nonexistent, add it in and count value = 1
@@ -152,7 +152,7 @@ def history():
     return OrderedDict(Counter(historyDict).most_common(20));
 
 # Return Query Word & Count as an OrderedDict
-def results():  
+def results():
     # returns the count of words that user has queried (cumulating word count but only to show words of
     # those which user has last queried)
     resDict = OrderedDict()  # declaring ordered dictionary datastructure
