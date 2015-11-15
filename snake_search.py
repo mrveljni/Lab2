@@ -1,7 +1,6 @@
 import re
 import httplib2
 import urllib
-from flask import redirect
 from bottle import *
 # easy-install bottle_sqlite/bottle-sqlite
 import bottle.ext.sqlite as sqlite
