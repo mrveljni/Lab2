@@ -1,3 +1,10 @@
+#snake_game{
+  width: 560px;
+  height: 412px;
+  border: none !important;
+  overflow: hidden !important;
+}
+
 .snake-img-container{
   width: 100%;
   height: auto;

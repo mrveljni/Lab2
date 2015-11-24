@@ -51,7 +51,7 @@ video {
 
 html {
     font-size: 100%; /* 1 */
-    overflow-y: scroll; /* 2 */
+    overflow: hidden;
     -webkit-tap-highlight-color: rgba(0,0,0,0); /* 3 */
     -webkit-text-size-adjust: 100%; /* 4 */
     -ms-text-size-adjust: 100%; /* 4 */

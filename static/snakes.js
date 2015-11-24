@@ -2622,7 +2622,7 @@ Game.Element = function() {
       for(var n = 0, l = obj.length ; n < l ; n++)
         obj[n] = extend(obj[n]);
     }
-    else if (!obj._extended) {
+    else if (!obj || !obj._extended) {
       Object.extend(obj, Game.Element.instanceMethods);
     }
     return obj;
