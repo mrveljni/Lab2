@@ -5,11 +5,6 @@
 </div>
 
 % include('snake_game.tpl')
-<script>
-    $('#snake-img').click(function(){
-        console.log("HELLO")
-    })
-</script>
 
 % include('components/search-bar.tpl')
 
