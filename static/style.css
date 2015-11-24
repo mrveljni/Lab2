@@ -5,7 +5,7 @@
 }
 
 .snake-img{
-  background: url(/static/snake.svg) center no-repeat;
+  background: url(/static/snake.gif) center no-repeat;
   width: 18.75em;
   height: 23.439em;
   margin: 0 auto;

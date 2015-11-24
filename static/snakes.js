@@ -3376,7 +3376,6 @@ Snakes = function() {
         main:    $('snakes'),
         overlay: $('overlay'),
         loading: $('loading'),
-        credits: $('credits'),
         sound:   $('sound')
       };
 
@@ -3589,7 +3588,6 @@ Snakes = function() {
           { text: 'New Game',    title: "Start a new game of snakes...",    action: function()  { this.newGame();          }                                                        },
           {                      title: "Change Difficulty level",          action: function(d) { this.resetDifficulty(d); }, choice: difficulties, chosen: this.storage.difficulty },
           { text: 'High Scores', title: "View the high score table",        action: function()  { this.viewScores();       }                                                        },
-          { text: 'Credits',     title: "Thanks to the games contributors", action: function()  { this.viewCredits();      }                                                        },
         ]
       });
     },
