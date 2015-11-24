@@ -195,14 +195,18 @@ def recentlysearched():
 # fetches links and their pagerank scores
 # associated with the first word of the user's query
 def pageranked_url_fetcher(db):
-    firstword = re.findall ('\w+', request.query['keywords'].lower())[0]
+    args = re.findall('\w+', request.query['keywords'].lower())
     # Need to pass arguments in as a tuple or an array.
-    args = [ firstword ]
-    cursor = db.execute("select doc_url, doc_url_title, doc_rank from (select doc_index.doc_id, doc_index.doc_url, "
-                        "doc_index.doc_url_title from lexicon,inverted_index,doc_index where lexicon.word_id="
-                        "inverted_index.word_id and inverted_index.doc_id=doc_index.doc_id  and lexicon.word=?) "
+    # args = [ firstword ]
+
+    unranked = "select doc_index.doc_id, doc_index.doc_url, doc_index.doc_url_title from lexicon,inverted_index,doc_index where lexicon.word_id=inverted_index.word_id and inverted_index.doc_id=doc_index.doc_id and lexicon.word='{0}'"
+    unranked_query = ' intersect '.join([ unranked.format(arg)  for arg in args ])
+    unranked_query = "(" + unranked_query + ")"
+    x = "select distinct doc_url, doc_url_title, doc_rank from {0} unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;".format(unranked_query)
+    print x
+    cursor = db.execute("select distinct doc_url, doc_url_title, doc_rank from {0}" 
                         "unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank "
-                        "desc;", args)
+                        "desc;".format(unranked_query))
     results = cursor.fetchall();
     # print results
     return results
