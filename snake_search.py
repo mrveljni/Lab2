@@ -1,4 +1,5 @@
 import re
+import json
 import httplib2
 import urllib
 from bottle import *
@@ -111,6 +112,23 @@ def redirect_page():  # query entered in SIGN IN MODE
     session['user_email'] = user_email
     session.save
     redirect('/')
+
+# Keyword search in JSON form for autocomplete suggestions
+# http://localhost:8080/api/?keywords=andrew
+@route('/api/', method="GET")
+def api(db):
+    try:
+        raw_query_string = request.query['keywords'].lower()
+        raw_query_string = re.findall ('\w+',raw_query_string)
+        if (len(raw_query_string) < 1):
+            return dict(data=[])
+    except KeyError:
+        return dict(data=[])
+    results = list(pageranked_url_fetcher(db))
+    index = ['link','description','score']
+    r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]
+    return dict(data=r)
+
 
 # Main search engine method
 @route('/', method="GET")

@@ -10,14 +10,43 @@
 		<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
 		<script src="https://cdn.datatables.net/s/bs-3.3.5/dt-1.10.10/datatables.min.js"></script>
 		<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+		<script src="/static/typeahead.js"></script>
 
 		<title> snake search | for all your word counting needs </title>
-		<script> $(document).ready(function(){
+		<script> 
+			$(document).ready(function(){
+				// DataTable Initialization
 				$('#pageranked_urls').DataTable({
 					pageLength: 5,
 					searching: false,
 					lengthChange: false
 				})
+				// Autocomplete engine
+				var suggestionEngine = new Bloodhound({
+				  datumTokenizer: Bloodhound.tokenizers.obj.whitespace('description'),
+				  queryTokenizer: Bloodhound.tokenizers.whitespace,
+				  remote: {
+				    url: '/api/?keywords=%QUERY',
+				    wildcard: '%QUERY',
+					  filter: function(response){
+						return $.map(response.data, function (item) {
+							if (item.description.length){
+				                return {
+				                    desc: item.description,
+				                    url: item.link
+				                };								
+							}
+			            });
+					  }				    
+				  }
+				});
+
+				$('#query').typeahead(null, {
+				  display: 'desc',
+				  source: suggestionEngine
+				}).on('typeahead:selected', function(e, datum) {
+		           location.href=datum.url
+        		});
 			})
 		</script>
 	</head>
