@@ -60,7 +60,7 @@ def update_auth_state():
 # Establishing home page and static assets
 @route('/secret')
 def secret():
-    return static_file('snake_game.html', root='./views/')
+    return static_file('snake_game.html', root='./views/') 
 
 # Establishing home page and static assets
 @route('/static/<filename:path>')
