@@ -14,6 +14,8 @@ from oauth2client.client import flow_from_clientsecrets
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from beaker.middleware import SessionMiddleware
+# pip install gevent
+from gevent import monkey; monkey.patch_all()
 
 Per_page=5
 mainword = ""
@@ -253,4 +255,4 @@ def pageranked_url_fetcher(db):
     # print results
     return results
 
-run(app=app, hosts='localhost', port=8080, debug=True)
+run(app=app, hosts='localhost', port=8080, debug=True, server='gevent')
