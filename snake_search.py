@@ -73,7 +73,7 @@ def update_auth_state():
 # Establishing home page and static assets
 @route('/secret')
 def secret():
-    return static_file('snake_game.html', root='./views/') 
+    return static_file('snake_game.html', root='./views/')
 
 # Establishing home page and static assets
 @route('/static/<filename:path>')
@@ -150,15 +150,14 @@ def lucky(db):
         raw_query_string = re.findall ('\w+',raw_query_string)
         if (len(raw_query_string) < 1):
             return redirect('/?keywords=' + request.query['keywords'])
-    except KeyError: 
+    except KeyError:
         return redirect('/?keywords=' + request.query['keywords'])
 
     results = list(pageranked_url_fetcher(db))
     index = ['link','description','score']
-    r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]    
+    r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]
 
     # grab top result URL and send user to it
-    print "results", r[0]['link']
     if (len(r)>0):
         redirect( r[0]['link'] )
     else:
@@ -258,7 +257,7 @@ def pageranked_url_fetcher(db):
     unranked_query = "(" + unranked_query + ")"
     x = "select distinct doc_url, doc_url_title, doc_rank from {0} unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;".format(unranked_query)
     # print x
-    cursor = db.execute("select distinct doc_url, doc_url_title, doc_rank from {0}" 
+    cursor = db.execute("select distinct doc_url, doc_url_title, doc_rank from {0}"
                         "unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank "
                         "desc;".format(unranked_query))
     results = cursor.fetchall();
