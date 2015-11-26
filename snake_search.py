@@ -1,3 +1,12 @@
+import sys
+if 'threading' in sys.modules:
+    del sys.modules['threading']
+import gevent
+import gevent.socket
+import gevent.monkey
+gevent.monkey.patch_all()
+# http://stackoverflow.com/a/18455952/765409
+
 import re
 import json
 import httplib2
@@ -15,7 +24,8 @@ from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from beaker.middleware import SessionMiddleware
 # pip install gevent
-from gevent import monkey; monkey.patch_all()
+
+
 
 Per_page=5
 mainword = ""
@@ -255,4 +265,4 @@ def pageranked_url_fetcher(db):
     # print results
     return results
 
-run(app=app, hosts='localhost', port=8080, debug=True, server='gevent')
+run(app=app,  port=8080, debug=True, server='gevent')
