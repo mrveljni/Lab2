@@ -14,7 +14,18 @@
 
 		<title> snake search | for all your word counting needs </title>
 		<script> 
+
+			$(document).on('click','#feeling-lucky',function(s){
+				var query = $("#query").val();
+				if (query.trim().length){
+					location.href="/lucky?keywords=" + encodeURIComponent(query)
+				}
+				return false;
+			})
+
 			$(document).ready(function(){
+				// Clear out modified action variable
+				$('form').each(function() { this.reset() });				
 				// DataTable Initialization
 				$('#pageranked_urls').DataTable({
 					pageLength: 5,
@@ -40,7 +51,7 @@
 					  }				    
 				  }
 				});
-
+				// Initialize DOM autosuggest element
 				$('#query').typeahead(null, {
 				  display: 'desc',
 				  source: suggestionEngine

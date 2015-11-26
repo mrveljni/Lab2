@@ -129,6 +129,28 @@ def api(db):
     r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]
     return dict(data=r)
 
+# if keyword argument has one result, navigate to it.
+# else redirect to / with the same keywords arguments
+@route('/lucky', method="GET")
+def lucky(db):
+    try: #check if the user is passing keywords in the URL (request)
+        raw_query_string = request.query['keywords']
+        raw_query_string = re.findall ('\w+',raw_query_string)
+        if (len(raw_query_string) < 1):
+            return redirect('/?keywords=' + request.query['keywords'])
+    except KeyError: 
+        return redirect('/?keywords=' + request.query['keywords'])
+
+    results = list(pageranked_url_fetcher(db))
+    index = ['link','description','score']
+    r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]    
+
+    # grab top result URL and send user to it
+    print "results", r[0]['link']
+    if (len(r)>0):
+        redirect( r[0]['link'] )
+    else:
+        redirect('/?keywords=' + request.query['keywords'])
 
 
 # Main search engine method
@@ -168,6 +190,7 @@ def main(db):
         return template('views/results.tpl', query_str=raw_query_string.lower(),
                         pagerankedList=pageranked_url_fetcher(db), resDict=results(), historyDict = False,
                         recentList = False)
+
 
 # Returns user's top 20 queried words as an OrderedDict
 def history():

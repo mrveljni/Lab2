@@ -86,17 +86,20 @@
   text-align: center;
 }
 
-
 #query-container{
   padding: 5% 0 5% 0;
+  width: 70%;
+  margin: 0 auto;
 }
 
 #query-btn{
-  width: 50%;
-/*  margin-top:35px;
-*/
-  display: block;
-  margin: 0 auto;
+  width: 45%;
+  float: right;
+}
+
+#feeling-lucky{
+  width: 45%;
+  float: left;
 }
 
 .unclickable:hover{
@@ -193,5 +196,11 @@ body {
   /* Remove the bottom border on the jumbotron for visual effect */
   .jumbotron {
     border-bottom: 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .search-col{
+    margin-top: 40px;
   }
 }
