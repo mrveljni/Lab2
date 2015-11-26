@@ -221,7 +221,7 @@ def pageranked_url_fetcher(db):
     unranked_query = ' intersect '.join([ unranked.format(arg)  for arg in args ])
     unranked_query = "(" + unranked_query + ")"
     x = "select distinct doc_url, doc_url_title, doc_rank from {0} unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;".format(unranked_query)
-    print x
+    # print x
     cursor = db.execute("select distinct doc_url, doc_url_title, doc_rank from {0}" 
                         "unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank "
                         "desc;".format(unranked_query))
