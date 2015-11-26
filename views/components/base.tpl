@@ -45,7 +45,7 @@
 				  display: 'desc',
 				  source: suggestionEngine
 				}).on('typeahead:selected', function(e, datum) {
-		           location.href=datum.url
+					$("#query-btn").trigger('click');
         		});
 			})
 		</script>
