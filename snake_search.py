@@ -5,16 +5,15 @@ import gevent
 import gevent.socket
 import gevent.monkey
 gevent.monkey.patch_all()
-# http://stackoverflow.com/a/18455952/765409
 
 import re
 import json
 import httplib2
 import urllib
 from bottle import *
-# easy-install bottle_sqlite/bottle-sqlite
 import bottle.ext.sqlite as sqlite
 from collections import OrderedDict
+from collections import Counter
 from bottle import error
 from collections import Counter
 from operator import itemgetter
@@ -23,11 +22,7 @@ from oauth2client.client import flow_from_clientsecrets
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import build
 from beaker.middleware import SessionMiddleware
-# pip install gevent
 
-
-
-Per_page=5
 mainword = ""
 maintblstr = ""
 emaildict = OrderedDict()
@@ -35,8 +30,7 @@ emaildict2 = OrderedDict()
 
 # Session information
 session_opts = {
-    'session.type': 'file',
-    'session.data_dir': './data',
+    'session.type': 'memory',
     'session.auto': True
 }
 
@@ -47,7 +41,7 @@ app = SessionMiddleware(_bottleApp, session_opts)
 
 @error(404)
 def error404(error):
-    return template('views/error.tpl') #, errorstring=errorstring, errorpath=errorpath)
+    return template('views/error.tpl')
 
 # hook before a request is processed
 @hook('before_request')
@@ -122,7 +116,6 @@ def redirect_page():  # query entered in SIGN IN MODE
     session[user_email] = token
     # saving user_email as a value here, using as an identifier for authenticated state.
     session['user_email'] = user_email
-    session.save
     redirect('/')
 
 # Keyword search in JSON form for autocomplete suggestions
@@ -136,7 +129,7 @@ def api(db):
             return dict(data=[])
     except KeyError:
         return dict(data=[])
-    results = list(pageranked_url_fetcher(db))
+    results = list(pageranked_url_fetcher(db, raw_query_string))
     index = ['link','description','score']
     r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]
     return dict(data=r)
@@ -153,7 +146,7 @@ def lucky(db):
     except KeyError:
         return redirect('/?keywords=' + request.query['keywords'])
 
-    results = list(pageranked_url_fetcher(db))
+    results = list(pageranked_url_fetcher(db, raw_query_string))
     index = ['link','description','score']
     r = [ dict( (index[i],value) for i, value in enumerate(row)) for row in results ]
 
@@ -167,101 +160,83 @@ def lucky(db):
 # Main search engine method
 @route('/', method="GET")
 def main(db):
-    global emaildict
-    session = request.environ.get('beaker.session') #extracting the global variable dictionary beaker.session
-    # print "In Main: ", session['user_email']
+    #extracting the global variable dictionary beaker.session
+    session = request.environ.get('beaker.session') 
 
     try: #check if the user is passing /?keywords in the URL (request)
         raw_query_string = request.query['keywords']
+        raw_query_list = re.findall('\w+', raw_query_string)
     except KeyError:
         return template('views/home.tpl')
 
-    if ('user_email' in session) and session['user_email']:
-        maindict = OrderedDict()
-        # print 'This is user logged in: ', session['user_email']
-        # print 'This is main dict: ', maindict
-        if session['user_email'] not in emaildict:
-            emaildict[session['user_email']]= maindict
+    user_email = 'user_email' in session and session['user_email']
 
-        mainqueryresult = raw_query_string.lower()  # requesting 'keywords' from HTML and making it lowercase
-        mainquerylist = re.findall ('\w+', mainqueryresult)
+    return template(
+                    'views/results.tpl', 
+                    query_str=raw_query_string.lower(),
+                    pagerankedList=pageranked_url_fetcher(db, raw_query_list), 
+                    resDict=results(raw_query_list),
+                    historyDict = history(user_email),
+                    recentList = recentlysearched(raw_query_list,user_email)
+                )
 
-        for mainword in mainquerylist:  # for each word in user query
-            if mainword not in emaildict[session['user_email']]:  # check if the word does not exist in the main dictionary
-                emaildict[session['user_email']][mainword] = 1  # if nonexistent, add it in and count value = 1
-            else:  # else word does exist in main dictionary
-                emaildict[session['user_email']][mainword] += 1  # increase count value by 1
-
-    # Add the history and recent data structures only if user is logged in
-    if ('user_email' in session) and session['user_email']:
-        return template('views/results.tpl', query_str=raw_query_string.lower(),
-                        pagerankedList=pageranked_url_fetcher(db), resDict=results(), historyDict = history(),
-                        recentList = recentlysearched())
+def record_user_search(user_email, query_str_list):
+    if user_email:
+        if user_email not in emaildict:
+            emaildict[user_email] = Counter()
+        for w in query_str_list:
+            emaildict[user_email][w] +=1
     else:
-        return template('views/results.tpl', query_str=raw_query_string.lower(),
-                        pagerankedList=pageranked_url_fetcher(db), resDict=results(), historyDict = False,
-                        recentList = False)
-
+        return False
 
 # Returns user's top 20 queried words as an OrderedDict
-def history():
-    session = request.environ.get('beaker.session')
-    historyDict = emaildict[session['user_email']]
-    return OrderedDict(Counter(historyDict).most_common(20));
+def history(user_email):
+    if user_email:
+        historyDict = emaildict[user_email]
+        return OrderedDict(Counter(historyDict).most_common(20))
+    else:
+        return False
 
 # Return Query Word & Count as an OrderedDict
-def results():
+def results(query_str_list):
     # returns the count of words that user has queried (cumulating word count but only to show words of
     # those which user has last queried)
-    resDict = OrderedDict()  # declaring ordered dictionary datastructure
-    queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
-    querylist = re.findall ('\w+', queryresult) # splitting queryresult by the spaces and reversing it
-    for word in querylist:  # for each word in user query
-        if word not in resDict:  # if word is not in the results dictionary, add it and assign it a count of 1
-            resDict[word] = 1
-        else:  # if word is in results dictionary, increase the count by 1
-            resDict[word] += 1
+    resDict = Counter()  # declaring ordered dictionary datastructure
+    for w in query_str_list:  # for each word in user query
+        resDict[w] += 1
     return resDict
 
 # Returns user's 10 most recently searched word as a List
-def recentlysearched():
-    tblstr=""
-    templst=[]
+def recentlysearched(query_str_list, user_email):
+    if (user_email):
+        tblstr=""
+        templst=[]
 
-    s = request.environ.get('beaker.session')
+        if user_email not in emaildict2:
+            emaildict2[user_email] = []
 
-    queryresult = request.query['keywords'].lower()  # requesting 'keywords' from HTML and making it lowercase
-    querylist = re.findall ('\w+', queryresult)
+        emaildict2[user_email] = emaildict2[user_email] + query_str_list
+        len_of_rss_array = len(emaildict2[user_email])
 
-    recentsearchstring = []
-    if s['user_email'] not in emaildict2:
-        emaildict2[s['user_email']] = recentsearchstring
+        templst = emaildict2[user_email][::-1]
+        templst = templst[:10]
 
-    emaildict2[s['user_email']] = emaildict2[s['user_email']] + querylist
-    len_of_rss_array = len(emaildict2[s['user_email']])
-
-    templst = emaildict2[s['user_email']][::-1]
-    templst = templst[:10]
-
-    return templst
+        return templst
+    else:
+        return False
 
 # fetches links and their pagerank scores
 # associated with the first word of the user's query
-def pageranked_url_fetcher(db):
-    args = re.findall('\w+', request.query['keywords'].lower())
+def pageranked_url_fetcher(db, query_str_list):
     # Need to pass arguments in as a tuple or an array.
-    # args = [ firstword ]
-
     unranked = "select doc_index.doc_id, doc_index.doc_url, doc_index.doc_url_title from lexicon,inverted_index,doc_index where lexicon.word_id=inverted_index.word_id and inverted_index.doc_id=doc_index.doc_id and lexicon.word='{0}'"
-    unranked_query = ' intersect '.join([ unranked.format(arg)  for arg in args ])
+    unranked_query = ' intersect '.join([ unranked.format(arg)  for arg in query_str_list ])
     unranked_query = "(" + unranked_query + ")"
-    x = "select distinct doc_url, doc_url_title, doc_rank from {0} unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank desc;".format(unranked_query)
-    # print x
     cursor = db.execute("select distinct doc_url, doc_url_title, doc_rank from {0}"
                         "unranked left join page_rank on unranked.doc_id=page_rank.doc_id order by page_rank.doc_rank "
                         "desc;".format(unranked_query))
     results = cursor.fetchall();
-    # print results
     return results
 
-run(app=app,  port=8080, debug=True, server='gevent')
+
+run(app=app, port=8080, debug=True, server='gevent')
