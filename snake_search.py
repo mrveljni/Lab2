@@ -88,7 +88,7 @@ def signin():
     flow = flow_from_clientsecrets("client_secrets.json",
                                    scope='https://www.googleapis.com/auth/plus.me '
                                          'https://www.googleapis.com/auth/userinfo.email',
-                                   redirect_uri="http://localhost:8080/redirect")
+                                   redirect_uri="http://ec2-52-5-243-14.compute-1.amazonaws.com/redirect")
     uri = flow.step1_get_authorize_url()
     redirect(str(uri))
 
@@ -99,7 +99,7 @@ def redirect_page():  # query entered in SIGN IN MODE
     flow = OAuth2WebServerFlow(client_id='1011735639727-i12ach2k55gogrfl603e9fl1ub2u5rm0.apps.googleusercontent.com',
                                client_secret='GDrQHnGCjVoDLJLgP5p7IyAr',
                                scope="https://www.googleapis.com/auth/calendar",
-                               redirect_uri='http://localhost:8080/redirect')
+                               redirect_uri='http://ec2-52-5-243-14.compute-1.amazonaws.com/redirect')
     credentials = flow.step2_exchange(code)
     token = credentials.id_token['sub']
     http = httplib2.Http()
@@ -161,7 +161,7 @@ def lucky(db):
 @route('/', method="GET")
 def main(db):
     #extracting the global variable dictionary beaker.session
-    session = request.environ.get('beaker.session') 
+    session = request.environ.get('beaker.session')
 
     try: #check if the user is passing /?keywords in the URL (request)
         raw_query_string = request.query['keywords']
@@ -172,9 +172,9 @@ def main(db):
     user_email = 'user_email' in session and session['user_email']
 
     return template(
-                    'views/results.tpl', 
+                    'views/results.tpl',
                     query_str=raw_query_string.lower(),
-                    pagerankedList=pageranked_url_fetcher(db, raw_query_list), 
+                    pagerankedList=pageranked_url_fetcher(db, raw_query_list),
                     resDict=results(raw_query_list),
                     historyDict = history(user_email),
                     recentList = recentlysearched(raw_query_list,user_email)
